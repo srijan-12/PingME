@@ -1,7 +1,7 @@
 import { useSelector } from "react-redux"
 import ProfileModal from "./ProfileModal"
 import { useEffect, useState } from "react"
-import CreateGrpChatModal from "./CreateGrpChatModal"
+import { toast } from 'react-toastify';
 import GrpChatDetailModal from "./GrpChatDetailModal"
 import { MoonLoader } from "react-spinners"
 import axios from "axios"
@@ -30,6 +30,9 @@ export default function ChatArea({ viewChatArea , setViewChatArea }){
 
        useEffect(()=>{
             const fetchAllMessages = async() =>{
+                if(!chat?.displayChat?._id){
+                return
+            }
                 try {
                     const result = await axios.get(fullURL, {withCredentials:true})
                     console.log(result?.data?.result)
@@ -39,10 +42,8 @@ export default function ChatArea({ viewChatArea , setViewChatArea }){
                     },300)
                 } catch (error) {
                     console.log(error.message)
+                    toast.error(error.message)
                 }
-            }
-            if(!chat?.displayChat?._id){
-                return
             }
             fetchAllMessages();
        },[chat?.displayChat])
@@ -87,14 +88,59 @@ export default function ChatArea({ viewChatArea , setViewChatArea }){
 
 
                 {/* render messages here */}
-                <div className="section2 bg-gray-200 w-[98%] mx-auto rounded-lg p-4 h-[86%] flex flex-col justify-between">
+                <div className="section2 bg-gray-100 w-[98%] mx-auto rounded-lg p-4 h-[86%] flex flex-col justify-between">
                     <div className="h-[92%]">
 
-                    {loading ? <div className="w-full h-full flex justify-center items-center"><MoonLoader color="black"/></div> : <div className="bg-red-200 h-full w-full overflow-y-scroll">
-                            {messages?.map((msg)=>{
-                                return <div className="flex gap-2" key={msg?._id}> 
-                                    <div>img</div>
-                                    <div>{msg?.content}</div>
+                    {loading ? <div className="w-full h-full flex justify-center items-center"><MoonLoader color="black"/></div> : <div className=" h-full w-full overflow-y-scroll">
+                            {messages?.map((msg, idx)=>{
+                                const nextMsg = messages[idx + 1];
+                                const LastMessageBySender = !nextMsg || msg?.sender?._id !== nextMsg?.sender?._id
+                                return <div className="" key={msg?._id}> 
+                                    {msg?.sender?._id === currentUserId ? <>
+                                        <div className="chat chat-end">
+                                        <div className="chat-image avatar">
+                                            <div className="w-10 rounded-full">
+                                            {LastMessageBySender && <img
+                                                alt="Tailwind CSS chat bubble component"
+                                                src="https://img.daisyui.com/images/profile/demo/anakeen@192.webp"
+                                            />}
+                                            </div>
+                                        </div>
+                                        <div className="chat-header">
+                                            You
+                                            <time className="text-xs opacity-50">
+                                                {new Date(msg?.createdAt).toLocaleTimeString([], {
+                                                    hour: '2-digit',
+                                                    minute: '2-digit',
+                                                    hour12: false,
+                                                })}
+                                            </time>
+                                        </div>
+                                        <div className="chat-bubble bg-[#00D2BC]">{msg?.content}</div>
+                                        </div>
+                                        </> :  <>
+                                                    <div className="chat chat-start">
+                                                        <div className="chat-image avatar">
+                                                            <div className="w-10 rounded-full">
+                                                            {LastMessageBySender && <img
+                                                                alt="Tailwind CSS chat bubble component"
+                                                                src="https://img.daisyui.com/images/profile/demo/kenobee@192.webp"
+                                                            />}
+                                                            </div>
+                                                        </div>
+                                                        <div className="chat-header">
+                                                            {msg?.sender?.name}
+                                                            <time className="text-xs opacity-50">
+                                                                {new Date(msg?.createdAt).toLocaleTimeString([], {
+                                                                    hour: '2-digit',
+                                                                    minute: '2-digit',
+                                                                    hour12: false,
+                                                                })}
+                                                            </time>
+                                                        </div>
+                                                        <div className="chat-bubble bg-[#00BAFE]">{msg?.content}</div>
+                                                        </div>
+                                                    </>}
                                 </div>
                             })}
                         </div>}
@@ -109,3 +155,5 @@ export default function ChatArea({ viewChatArea , setViewChatArea }){
         </>
     )
 }
+
+
