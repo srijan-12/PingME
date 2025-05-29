@@ -16,8 +16,8 @@ export default function SideDrawer({ sideDrawerVisiblity, setSideDrawerVisiblity
     const dispatch = useDispatch()
 
     async function handleCreateChat(id) {
-        console.log("hit")
         dispatch(addToChatHistory({chatWith : id}))
+        setSideDrawerVisiblity(false)
 
     }
 
@@ -60,8 +60,8 @@ export default function SideDrawer({ sideDrawerVisiblity, setSideDrawerVisiblity
 
   return (
     <>
-      <div className="w-full h-full absolute flex top-0">
-        <div ref={drawerRef} className="w-[300px] bg-[#FDFDFD] h-full  overflow-y-scroll">
+      <div className="w-full h-full absolute flex top-0 z-10">
+        <div ref={drawerRef} className="w-[300px] bg-[#FDFDFD] h-[99.2%]  overflow-y-scroll border border-gray-100">
             <div className="section1 p-4">
             <span className="text-xl">Search Users</span>
             </div>
@@ -92,9 +92,9 @@ export default function SideDrawer({ sideDrawerVisiblity, setSideDrawerVisiblity
             </div>
         </div>
 
-        <div className="flex-1 bg-black opacity-25">
+        {/* <div className="flex-1 bg-black opacity-25">
 
-        </div>
+        </div> */}
 
       </div>
     </>

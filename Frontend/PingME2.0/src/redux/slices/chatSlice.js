@@ -77,7 +77,15 @@ const chatSlice = createSlice({
         },
         settingError : (state, action) =>{
             state.error = null;
+        },
+        updateLatestMessage: (state, action) => {
+            state.displayChat = {
+                ...state.displayChat,
+                latestMessage: action.payload,
+            };
         }
+
+
     },
 
     extraReducers : (builder)=>{
@@ -146,7 +154,7 @@ const chatSlice = createSlice({
 })
 
 export const chatReducer = chatSlice.reducer
-export const {addChatToDisplay, settingError} = chatSlice.actions
+export const {addChatToDisplay, settingError, updateLatestMessage} = chatSlice.actions
 
 
 

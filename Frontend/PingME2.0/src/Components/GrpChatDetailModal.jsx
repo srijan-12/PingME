@@ -7,8 +7,10 @@ import axios, { all } from 'axios';
 import { debounce } from 'lodash';
 import { toast } from 'react-toastify';
 import { useDispatch, useSelector } from 'react-redux';
-import { adduserToGrp, createGrpChat, removeFromGrpChat, settingError, updateGrpName } from '../redux/slices/chatSlice';
+import { adduserToGrp, createGrpChat, fetchAllChatsFromBknd, removeFromGrpChat, settingError, updateGrpName } from '../redux/slices/chatSlice';
 import { ClipLoader } from 'react-spinners';
+import { useEffect } from 'react';
+import socket from '../socket';
 
 const style = {
   position: 'absolute',
@@ -45,6 +47,9 @@ export default function GrpChatDetailModal({text}) {
         dispatch(settingError())
       }
   }, [error]);
+
+  
+
 
     const baseURL = import.meta.env.VITE_BASE_URL
     
@@ -110,6 +115,7 @@ export default function GrpChatDetailModal({text}) {
         console.log(chatId, userId)
         try {
             dispatch(adduserToGrp({chatId, userId}))
+            socket.emit('added to group', userId)
             toast.success("user added to this conversation")
         } catch (error) {
             
@@ -118,12 +124,13 @@ export default function GrpChatDetailModal({text}) {
       
       
 
-      //from the statevariable and then call action to remove from db
+      //from the state variable and then call action to remove from db
       function removeAddedUser(userId){
         const newArray = usersArrayToSend.filter((u)=> u._id !== userId)
         setUsersArrayToSend(newArray)
         const chatId = displayChat?._id
         handleRemoveUser({chatId, userId, boolVal: false})
+        socket.emit("leave group", usersArrayToSend)
       }
 
       //from db using dispatch an action
@@ -133,8 +140,10 @@ export default function GrpChatDetailModal({text}) {
             dispatch(removeFromGrpChat({chatId, userId, boolVal}))
             if(userId === loggedInUserId && !error && boolVal){
                 toast.success('You left this conversation')
+                dispatch(fetchAllChatsFromBknd())
             }else if(userId !== loggedInUserId && !error  && !boolVal){
                 toast.success('Participant removed from this conversation')
+                socket.emit("leave group", usersArrayToSend)
             }
             // handleClose();
         } catch (error) {
@@ -146,6 +155,8 @@ export default function GrpChatDetailModal({text}) {
     function upadteGroupName({chatId, newGroupName}){
         console.log(chatId , newGroupName)
         dispatch(updateGrpName({chatId , newGroupName}))
+        dispatch(fetchAllChatsFromBknd())
+        socket.emit("update group", usersArrayToSend)
         handleClose()
     }
 
@@ -201,7 +212,7 @@ export default function GrpChatDetailModal({text}) {
                     {fetchedUserFromQuery.length > 0 ? fetchedUserFromQuery.map((user)=>{
                         return <div className='flex flex-row bg-gray-100 mb-1 p-2 rounded-lg hover:text-white hover:bg-[#40BAB6] cursor-pointer items-center gap-2' key={user?._id} onClick={()=> userClickHandler(user)}>
                             <div className='w-10 h-10 rounded-full'>
-                                <img src={user?.picture} />
+                                <img src={user?.picture}  className='w-10 h-10 rounded-full'/>
                             </div>
                             <div className='flex flex-col'>
                                 <span>{user?.name}</span>

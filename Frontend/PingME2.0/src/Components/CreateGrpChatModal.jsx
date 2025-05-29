@@ -9,6 +9,7 @@ import { toast } from 'react-toastify';
 import { useDispatch, useSelector } from 'react-redux';
 import { createGrpChat, settingError } from '../redux/slices/chatSlice';
 import { ClipLoader } from 'react-spinners';
+import socket from '../socket';
 
 const style = {
   position: 'absolute',
@@ -106,6 +107,8 @@ export default function CreateGrpChatModal({text}) {
     async function handleCreateGroup(){
         try {
             dispatch(createGrpChat({grpName, usersArrayToSend}))
+           const usersArrayToSendOnlyId = usersArrayToSend.map((u) => u._id);
+           socket.emit('Group created', usersArrayToSendOnlyId)
             handleClose();
         } catch (error) {
             console.log(error)
@@ -161,7 +164,7 @@ export default function CreateGrpChatModal({text}) {
                     {usersToAddArray.length > 0 ? usersToAddArray.map((user)=>{
                         return <div className='flex flex-row bg-gray-100 mb-1 p-2 rounded-lg hover:text-white hover:bg-[#40BAB6] cursor-pointer items-center gap-2' key={user?._id} onClick={()=> userClickHandler(user)}>
                             <div className='w-10 h-10 rounded-full'>
-                                <img src={user?.picture} />
+                                <img src={user?.picture} className='w-10 h-10 rounded-full'/>
                             </div>
                             <div className='flex flex-col'>
                                 <span>{user?.name}</span>

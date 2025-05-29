@@ -49,8 +49,8 @@ export default function ChatsHeader({user, sideDrawerVisiblity ,setSideDrawerVis
                         <i className="fa-solid fa-bell mx-4"></i>
 
                         {user?.currentUser?.picture ? (
-                            <div className="avatar w-10 h-10 rounded-full">
-                                <img src={user.currentUser.picture} alt="" />
+                            <div className="avatar w-10 h-10 rounded-full me-2">
+                                <img src={user.currentUser.picture} alt="" className="avatar w-10 h-10 rounded-full"/>
                             </div>
                             ) : (
                             <div className="w-10 h-10 rounded-full bg-gray-300" />

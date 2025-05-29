@@ -1,25 +1,79 @@
-import { useSelector } from "react-redux"
+import { useDispatch, useSelector } from "react-redux"
 import ProfileModal from "./ProfileModal"
 import { useEffect, useState } from "react"
 import { toast } from 'react-toastify';
 import GrpChatDetailModal from "./GrpChatDetailModal"
-import { MoonLoader } from "react-spinners"
+import { MoonLoader, SyncLoader } from "react-spinners"
 import axios from "axios"
+// import io from 'socket.io-client'
+import socket from "../socket";
+import NoChatsPage from "./NoChatsPage";
+import { useRef } from "react";
+import { useMemo } from "react";
+import { debounce } from "lodash";
+import { addChatToDisplay, fetchAllChatsFromBknd, updateLatestMessage } from "../redux/slices/chatSlice";
 
 export default function ChatArea({ viewChatArea , setViewChatArea }){
+    // const socket = useRef(null);
+    const selectedChatCompare = useRef(null)
+    const latestMessageRef = useRef(null)
     const chat = useSelector(state => state.chat)
     const currentUserId = useSelector(state => state?.user?.currentUser?._id)
+    const dispatch = useDispatch()
     const extractedUser = chat?.displayChat?.users?.filter((u)=> u?._id !== currentUserId)
 
     const[messages, setMessages] = useState([]);
     const[loading, setLoading] = useState(true);
-    const[newMessage, setNewMessage] = useState();
+    const[socketConnected, setSocketConnected] = useState(false);
     const[screenSize, setScreenSize] = useState(window.innerWidth)
     const[userInputMessage, setUserInputMessage] = useState('')
+    const[typing, setTyping] = useState(false)
+    const [isSomeoneTyping, setIsSomeoneTyping] = useState(false);
+
+    // const[stopTyping, setStopTyping] = useState(false)
+
+    const scrollContainerRef = useRef(null);
+
 
     const baseURL = import.meta.env.VITE_BASE_URL
     const fullURL = baseURL+`/message/fetchAllMessages/${chat?.displayChat?._id}`
     const sendmessageURL = baseURL + "/message/sendMessage"
+
+
+
+    useEffect(() => {
+        const scrollEl = scrollContainerRef.current;
+        if (scrollEl) {
+            scrollEl.scrollTop = scrollEl.scrollHeight;
+        }
+        }, [messages]);
+
+
+
+    useEffect(()=>{
+        // socket = io('http://localhost:3001');
+
+        socket.emit('joinApplication', currentUserId)
+        socket.on('joinedApplicationSucessfully', ()=>{
+            // console.log('user joined our app')
+            setSocketConnected(true)
+        })
+        socket.on('typing', (roomId)=> {
+            if(selectedChatCompare?.current?._id === roomId){
+                setIsSomeoneTyping(true)
+            }
+            
+        })
+        socket.on('stop typing', ()=> setIsSomeoneTyping(false))
+
+        socket.on('Group created', ()=> dispatch(fetchAllChatsFromBknd()))
+
+        socket.on('leave group', ()=> dispatch(fetchAllChatsFromBknd()))
+        socket.on('update group', ()=> dispatch(fetchAllChatsFromBknd()))
+        socket.on('added to group', ()=> dispatch(fetchAllChatsFromBknd()))
+        
+    },[])
+
        
        useEffect(()=>{
                window.addEventListener('resize', ()=> setScreenSize(window.innerWidth));
@@ -28,6 +82,8 @@ export default function ChatArea({ viewChatArea , setViewChatArea }){
            }
        },[])
 
+
+
        useEffect(()=>{
             const fetchAllMessages = async() =>{
                 if(!chat?.displayChat?._id){
@@ -35,9 +91,11 @@ export default function ChatArea({ viewChatArea , setViewChatArea }){
             }
                 try {
                     const result = await axios.get(fullURL, {withCredentials:true})
-                    console.log(result?.data?.result)
+                    // console.log(result?.data?.result)
                     setTimeout(()=>{
                         setMessages(result?.data?.result)
+                        socket.emit("join room", chat?.displayChat?._id)
+                        // socket.emit('leave chat', )
                         setLoading(false)
                     },300)
                 } catch (error) {
@@ -46,20 +104,79 @@ export default function ChatArea({ viewChatArea , setViewChatArea }){
                 }
             }
             fetchAllMessages();
+
+            selectedChatCompare.current = chat?.displayChat   //for notification purpose
+
        },[chat?.displayChat])
+
+       useEffect(()=>{
+        //   console.log(latestMessageRef.current)
+          if(latestMessageRef.current !== null){
+            // dispatch(updateLatestMessage(latestMessageRef?.current))
+            dispatch(fetchAllChatsFromBknd())
+          }else{
+            return
+          }
+          
+       },[latestMessageRef.current])
+
+       //for recieving messages
+       useEffect(()=>{
+        socket.on('recieve message', (messageData)=>{
+            console.log('recieving')
+            if(!selectedChatCompare.current || selectedChatCompare.current._id !== messageData?.chat?._id){
+                console.log('notification for you')
+                dispatch(fetchAllChatsFromBknd())
+            }else{
+                if(messages?.length > 0) {
+                      
+                    setMessages((pre) => [...pre, messageData])
+                     
+                }else{
+                    setMessages([messageData])
+                }
+            }
+            latestMessageRef.current = messageData
+        })
+
+        return ()=> socket.off('recieve message')
+    })
+
+    
+    const debounceTyping = useMemo(()=>{
+                return debounce(()=>{
+                    socket.emit('stop typing', selectedChatCompare.current._id)
+                    setTyping(false)
+                },700)
+            },[userInputMessage])
 
        const typingHandler = (e) => {
             setUserInputMessage(e.target.value)
+            if(!socketConnected){
+                return console.log('socket not connected yet')
+            }
+            if(!typing){
+                setTyping(true)
+                socket.emit('typing', selectedChatCompare.current._id)
+            }
+            debounceTyping()
        }
 
        const sendMessageFn = async(e) =>{
         if(e.key === 'Enter' && userInputMessage.trim()){
             try {
-                console.log('enter');
+                // console.log('enter');
                 const result = await axios.post(sendmessageURL, {content : userInputMessage, chatId : chat?.displayChat?._id}, {withCredentials:true})
-                console.log(result?.data?.result)
+                // console.log(result?.data?.result)
+                socket.emit('send message', result?.data?.result)
+                latestMessageRef.current = result?.data?.result
                 setUserInputMessage('')
-                setMessages((pre) => [...pre, result?.data?.result])
+                if(messages?.length > 0) {
+                    setMessages((pre) => [...pre, result?.data?.result])
+                }else{
+                    setMessages([result?.data?.result])
+                }
+                
             } catch (error) {
                 console.log(error.message)
             }
@@ -78,7 +195,8 @@ export default function ChatArea({ viewChatArea , setViewChatArea }){
                 </div>
 
                 <div className="section1 flex justify-between sm:p-4 bg-white mx-4 bg-red-100 mb-4 sm:mb-2">
-                    <p className="text-2xl">{chat?.displayChat?.chatName}</p>
+                    {/* {extractedUser[0]?.name} */}
+                    <p className="text-2xl">{chat?.displayChat?.isGroupChat ? chat?.displayChat?.chatName : extractedUser[0]?.name}</p>    
                         <div>
                            
                             {!chat?.displayChat?.isGroupChat ? <ProfileModal user = {extractedUser} text={ <i className="fa-solid fa-eye sm:p-4 cursor-pointer"></i>}/> : <GrpChatDetailModal text={ <i className="fa-solid fa-eye sm:p-4 cursor-pointer"></i>}/>}
@@ -88,10 +206,10 @@ export default function ChatArea({ viewChatArea , setViewChatArea }){
 
 
                 {/* render messages here */}
-                <div className="section2 bg-gray-100 w-[98%] mx-auto rounded-lg p-4 h-[86%] flex flex-col justify-between">
-                    <div className="h-[92%]">
+                <div className="section2 bg-gray-100 w-[98%] mx-auto rounded-lg p-4 h-[85%] flex flex-col justify-between">
+                    <div className="h-[84%]">
 
-                    {loading ? <div className="w-full h-full flex justify-center items-center"><MoonLoader color="black"/></div> : <div className=" h-full w-full overflow-y-scroll">
+                    {loading ? <div className="w-full h-full flex justify-center items-center"><MoonLoader color="black"/></div> : <div ref={scrollContainerRef} className="h-full w-full overflow-y-scroll">
                             {messages?.map((msg, idx)=>{
                                 const nextMsg = messages[idx + 1];
                                 const LastMessageBySender = !nextMsg || msg?.sender?._id !== nextMsg?.sender?._id
@@ -101,8 +219,8 @@ export default function ChatArea({ viewChatArea , setViewChatArea }){
                                         <div className="chat-image avatar">
                                             <div className="w-10 rounded-full">
                                             {LastMessageBySender && <img
-                                                alt="Tailwind CSS chat bubble component"
-                                                src="https://img.daisyui.com/images/profile/demo/anakeen@192.webp"
+                                                alt="Pic"
+                                                src={msg?.sender?.picture}
                                             />}
                                             </div>
                                         </div>
@@ -123,8 +241,8 @@ export default function ChatArea({ viewChatArea , setViewChatArea }){
                                                         <div className="chat-image avatar">
                                                             <div className="w-10 rounded-full">
                                                             {LastMessageBySender && <img
-                                                                alt="Tailwind CSS chat bubble component"
-                                                                src="https://img.daisyui.com/images/profile/demo/kenobee@192.webp"
+                                                                alt="Pic"
+                                                                src={msg?.sender?.picture}
                                                             />}
                                                             </div>
                                                         </div>
@@ -147,9 +265,10 @@ export default function ChatArea({ viewChatArea , setViewChatArea }){
 
 
                     </div>
+                    <div className="p-2 min-h-[5vh]">{isSomeoneTyping && <SyncLoader size={'5px'}/>}</div>
                     <input type="text" placeholder="Enter message" className="p-4 border outline-none rounded-lg w-full mt-2" value={userInputMessage} onChange={(e)=> typingHandler(e)} onKeyDown={(e)=> sendMessageFn(e)}/>
                 </div>
-                </> : <div className="w-fit m-auto mt-[40%] p-2"><p className="text-6xl font-thin">Click on user to start chatting</p></div>}
+                </> : <NoChatsPage/>}
                 
             </div>
         </>

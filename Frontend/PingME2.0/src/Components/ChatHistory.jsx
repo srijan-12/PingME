@@ -6,6 +6,7 @@ import { addChatToDisplay, fetchAllChatsFromBknd } from "../redux/slices/chatSli
 import { toast } from "react-toastify"
 import { NavLink } from "react-router-dom"
 import CreateGrpChatModal from "./CreateGrpChatModal"
+import socket from "../socket"
 
 export default function ChatHistory({ viewChatArea , setViewChatArea }){
 
@@ -42,17 +43,6 @@ export default function ChatHistory({ viewChatArea , setViewChatArea }){
     //backend se data fetch kr k display kr reh
     async function fetchingChats(){
         dispatch(fetchAllChatsFromBknd())
-        // try {
-        //     const result = await axios.get(fullURL,{withCredentials:true})
-        //     console.log(result?.data?.result, "this is backend fetched data")
-        //     setTimeout(()=>{
-        //         setLoading(false)
-        //         setChatHistoryArray(result?.data?.result)
-        //     },600)
-        // } catch (error) {
-        //     setLoading(false)
-        //     console.log(error)
-        // }
     }
 
     const[screenSize, setScreenSize] = useState(window.innerWidth)
@@ -95,7 +85,7 @@ export default function ChatHistory({ viewChatArea , setViewChatArea }){
                                 onClick={() => addChatToDisplayFN(chat)}
                                 >
                                 <div className="h-10 w-10 rounded-full">
-                                    <img src="" />
+                                   {!chat?.isGroupChat &&  <img src={chat?.users?.filter((u) => u?._id !== currentUserId)[0].picture}  className="avatar w-10 h-10 rounded-full me-2"/>}
                                 </div>
 
                                 <div className="flex flex-col">
