@@ -12,12 +12,17 @@ import {
 import ProfileModal from './ProfileModal'
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { useState } from 'react';
+import { addChatToDisplay } from '../redux/slices/chatSlice';
+import { addToNotificationArray, removeNotificationFromArray } from '../redux/slices/notification';
 
 
-export default function ChatsHeader({user, sideDrawerVisiblity ,setSideDrawerVisiblity}){
-
+export default function ChatsHeader({user, sideDrawerVisiblity ,setSideDrawerVisiblity, setViewChatArea}){
+    const dispatch = useDispatch()
     const navigate = useNavigate()
-
+    const notifArray = useSelector(state => state?.notification?.notificationArray)
+    const[showNotification, setShowNotification] = useState(false)
     function logoutHandler(){
        Cookies.remove('token')
        toast.success("Logged out")
@@ -25,6 +30,13 @@ export default function ChatsHeader({user, sideDrawerVisiblity ,setSideDrawerVis
             navigate("/")
        },300)
     } 
+
+    function openChatFromNotification(no){
+        dispatch(addChatToDisplay(no?.chat))
+        setViewChatArea(true)
+        dispatch(removeNotificationFromArray(no._id))
+        setShowNotification(false)
+    }
     
     return(
         <>
@@ -46,7 +58,24 @@ export default function ChatsHeader({user, sideDrawerVisiblity ,setSideDrawerVis
                     </div>
 
                     <div className="div3 flex items-center jsutify-around w-fit">
-                        <i className="fa-solid fa-bell mx-4"></i>
+
+                        <div className='rounded-full p-2 w-15 h-15 py-5 mx-8 cursor-pointer' onClick={()=> setShowNotification(!showNotification)}>
+                            <i className="fa-solid fa-bell mx-4 relative"></i> <div className="badge badge-sm badge-secondary absolute text-red-600 p-2 rounded-full px-2 top-5 right-33">{notifArray?.length}</div>
+                        </div>
+
+                            {showNotification && notifArray.length > 0 && <div className='bg-white w-[42%] sm:w-[35%] lg:w-[21%] p-2 absolute z-5 top-20 rounded-lg right-4 border border-gray-100'>
+                                <Menu> 
+                                    {notifArray.map((no)=>{
+                                           return <MenuItem key={no._id} onClick = {()=> openChatFromNotification(no)}>
+                                            <div className="group flex w-full items-center gap-2 rounded-lg px-3 py-1.5 data-focus:bg-blue-200 text-black cursor-pointer hover:bg-blue-300 border border-gray-200 mt-2 me-2">
+                                            <p className='text-xs'><span className='font-bold'>{no?.sender?.name}</span> sent you a message on {no?.chat?.isGroupChat ? <span className='font-bold'>{no?.chat?.chatName}</span> : null}</p>
+                                        </div>
+                                        
+                                    </MenuItem>})}
+                                </Menu>
+
+                            </div> } {showNotification && notifArray.length <= 0 && <div className='bg-white w-[42%] sm:w-[35%] lg:w-[21%] p-2 absolute z-5 top-20 rounded-lg right-4 border border-gray-100'> <p className='text-xs'>No notification to show</p> </div> }
+                        
 
                         {user?.currentUser?.picture ? (
                             <div className="avatar w-10 h-10 rounded-full me-2">

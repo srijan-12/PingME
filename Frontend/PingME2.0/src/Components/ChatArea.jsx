@@ -12,6 +12,7 @@ import { useRef } from "react";
 import { useMemo } from "react";
 import { debounce } from "lodash";
 import { addChatToDisplay, fetchAllChatsFromBknd, updateLatestMessage } from "../redux/slices/chatSlice";
+import { addToNotificationArray } from "../redux/slices/notification";
 
 export default function ChatArea({ viewChatArea , setViewChatArea }){
     // const socket = useRef(null);
@@ -19,6 +20,7 @@ export default function ChatArea({ viewChatArea , setViewChatArea }){
     const latestMessageRef = useRef(null)
     const chat = useSelector(state => state.chat)
     const currentUserId = useSelector(state => state?.user?.currentUser?._id)
+    const notifArray = useSelector(state => state?.notification?.notificationArray)
     const dispatch = useDispatch()
     const extractedUser = chat?.displayChat?.users?.filter((u)=> u?._id !== currentUserId)
 
@@ -126,6 +128,7 @@ export default function ChatArea({ viewChatArea , setViewChatArea }){
             console.log('recieving')
             if(!selectedChatCompare.current || selectedChatCompare.current._id !== messageData?.chat?._id){
                 console.log('notification for you')
+                dispatch(addToNotificationArray(messageData))
                 dispatch(fetchAllChatsFromBknd())
             }else{
                 if(messages?.length > 0) {
@@ -163,8 +166,10 @@ export default function ChatArea({ viewChatArea , setViewChatArea }){
        }
 
        const sendMessageFn = async(e) =>{
-        if(e.key === 'Enter' && userInputMessage.trim()){
-            try {
+        if((e?.key && e.key !== 'Enter') || !userInputMessage.trim()){
+            return
+        }
+        try {
                 // console.log('enter');
                 const result = await axios.post(sendmessageURL, {content : userInputMessage, chatId : chat?.displayChat?._id}, {withCredentials:true})
                 // console.log(result?.data?.result)
@@ -180,7 +185,6 @@ export default function ChatArea({ viewChatArea , setViewChatArea }){
             } catch (error) {
                 console.log(error.message)
             }
-        }
        }
 
 
@@ -265,8 +269,14 @@ export default function ChatArea({ viewChatArea , setViewChatArea }){
 
 
                     </div>
+                    
                     <div className="p-2 min-h-[5vh]">{isSomeoneTyping && <SyncLoader size={'5px'}/>}</div>
-                    <input type="text" placeholder="Enter message" className="p-4 border outline-none rounded-lg w-full mt-2" value={userInputMessage} onChange={(e)=> typingHandler(e)} onKeyDown={(e)=> sendMessageFn(e)}/>
+                    <div className="flex gap-4 h-fit justify-between items-center">
+                        <input type="text" placeholder="Enter message" className="p-4 border outline-none rounded-lg w-full mt-2" value={userInputMessage} onChange={(e)=> typingHandler(e)} onKeyDown={sendMessageFn}/> 
+
+                        <div className="h-12 w-15 rounded-lg bg-[#40BAB6] text-white flex items-center justify-center cursor-pointer hover:bg-[#127a76]" onClick={sendMessageFn}><i className="fa-solid fa-paper-plane"></i></div>
+                    </div>
+                    
                 </div>
                 </> : <NoChatsPage/>}
                 

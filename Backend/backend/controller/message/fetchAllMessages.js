@@ -10,6 +10,17 @@ export default async function fetchAllMessages(req, res){
                 path : "users",
                 select : "-password -confirmPassword"
             }
+        }).populate({
+            path : 'chat',
+            populate : {
+                path : 'latestMessage'
+            }
+        }).populate({
+            path : 'chat',
+            populate :{
+                path :  'groupAdmin',
+                select : '-password -confirmPassword'
+            }
         });
         if(foundChat.length < 1){
             return res.status(200).json({result : null, error : null, message : "all messages"})

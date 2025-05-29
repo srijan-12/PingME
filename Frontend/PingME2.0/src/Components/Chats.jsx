@@ -19,7 +19,7 @@ const Chats =() =>{
     return(
         <>
            <div className="main w-full h-full flex flex-col">
-                {user && <ChatsHeader user={user} sideDrawerVisiblity= {sideDrawerVisiblity} setSideDrawerVisiblity ={setSideDrawerVisiblity}/>}
+                {user && <ChatsHeader user={user} sideDrawerVisiblity= {sideDrawerVisiblity} setSideDrawerVisiblity ={setSideDrawerVisiblity}  setViewChatArea = {setViewChatArea}/>}
                 {user && sideDrawerVisiblity && <SideDrawer user={user} sideDrawerVisiblity= {sideDrawerVisiblity} setSideDrawerVisiblity ={setSideDrawerVisiblity}/>}
                 {user && <div className="flex justify-around me-2">
                     <ChatHistory viewChatArea= {viewChatArea} setViewChatArea = {setViewChatArea}/>
