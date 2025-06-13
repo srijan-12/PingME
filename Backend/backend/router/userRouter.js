@@ -15,7 +15,7 @@ userRouter.post('/login', satizeLoginDetails,login)
 userRouter.get('/chat', authCheck)
 userRouter.get("/auth", authCheck,getCurrentuser)
 userRouter.get("/search", authCheck, searchForUser)
-userRouter.post('/api/users/logout', (req, res) => {
+userRouter.post('/logout', (req, res) => {
   res.clearCookie('token', {
     httpOnly: true,
     secure: true,
