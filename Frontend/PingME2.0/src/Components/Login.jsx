@@ -36,6 +36,7 @@ export default function Login(){
             }
             // navigate to /chats
         } catch (error) {
+            console.log(error?.response?.data)
             return toast.error(error?.response?.data?.error)
         }
     }
