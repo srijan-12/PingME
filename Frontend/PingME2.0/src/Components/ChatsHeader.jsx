@@ -23,13 +23,20 @@ export default function ChatsHeader({user, sideDrawerVisiblity ,setSideDrawerVis
     const navigate = useNavigate()
     const notifArray = useSelector(state => state?.notification?.notificationArray)
     const[showNotification, setShowNotification] = useState(false)
-    function logoutHandler(){
-       Cookies.remove('token')
-       toast.success("Logged out")
-       setTimeout(()=>{
-            navigate("/")
-       },300)
-    } 
+  
+    function logoutHandler() {
+  axios.post('https://pingme-backend-uhlp.onrender.com/api/users/logout', {}, {
+    withCredentials: true, 
+  }).then(() => {
+    toast.success("Logged out");
+    setTimeout(() => {
+      navigate('/');
+    }, 300);
+  }).catch(err => {
+    console.error("Logout failed", err);
+    toast.error("Logout failed");
+  });
+}
 
     function openChatFromNotification(no){
         dispatch(addChatToDisplay(no?.chat))
