@@ -18,13 +18,14 @@ export const Home = () =>{
             toast.success("Getting your chats ready")
             return setTimeout(()=>{
                 navigate("/chats")
-            },500)
+            },100)
             
         }else{
+            console.log('error here');
             toast.error("Please login again")
             return setTimeout(()=>{
                 navigate("/")
-            },500)
+            },100)
         }
     }
 
