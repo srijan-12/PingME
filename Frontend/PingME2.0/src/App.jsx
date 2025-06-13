@@ -2,6 +2,7 @@ import {createBrowserRouter, RouterProvider} from "react-router-dom"
 import { PageDummy } from "./Components/PageDummy"
 import { Home } from "./Components/Home"
 import Chats from "./Components/Chats"
+import  NotFound  from "./Components/Home"
 import './App.css'
 import ToastProvider from "./Components/ToastProvider"
 import ProtectRoute from "./Components/ProtectRoute"
@@ -11,7 +12,8 @@ function App() {
 
   const router = createBrowserRouter([
     {path : "/", element :<Home/>},
-    {path : "/chats", element : <ProtectRoute><Chats /></ProtectRoute>}
+    {path : "/chats", element : <ProtectRoute><Chats /></ProtectRoute>},
+    { path: "*", element: <NotFound /> }
   ])
 
   return (
