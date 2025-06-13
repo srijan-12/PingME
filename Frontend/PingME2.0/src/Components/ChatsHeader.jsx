@@ -16,6 +16,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useState } from 'react';
 import { addChatToDisplay } from '../redux/slices/chatSlice';
 import { addToNotificationArray, removeNotificationFromArray } from '../redux/slices/notification';
+import axios from 'axios';
 
 
 export default function ChatsHeader({user, sideDrawerVisiblity ,setSideDrawerVisiblity, setViewChatArea}){
