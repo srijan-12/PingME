@@ -14,7 +14,7 @@ const app = express()
 const server = createServer(app)
 const io = new Server(server,{
     cors : {
-        origin: 'http://localhost:5173'
+        origin: 'https://pingme-frontend1.onrender.com/'
     },
     pingTimeout : 300000
 });
@@ -24,7 +24,7 @@ configDotenv()
 const PORT = process.env.PORT||3001
 
 app.use(cors({
-    origin : 'http://localhost:5173',
+    origin : 'https://pingme-frontend1.onrender.com/',
     credentials : true
 }))
 app.use(express.json())
