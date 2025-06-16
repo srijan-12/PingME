@@ -21,7 +21,7 @@ export default function Login(){
         try {
             if(activeGuest){
                 const res = await axios.post(fullURL, {email:guestEmail, password:guestPassword}, {withCredentials : true})
-                setLoading(false)
+                setLoading(false);
                 toast.success(res?.data?.result)
                 setTimeout(()=>{
                     navigate('/chats')
